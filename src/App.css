@@ -1,0 +1,73 @@
+.title {
+  text-align: center;
+  padding: 0.5em;
+  -webkit-box-shadow: 3px 5px 10px 2px #ccc;
+          box-shadow: 3px 5px 10px 2px #ccc;
+  -webkit-border-radius: 5px;
+          border-radius: 5px;
+}
+
+
+.RecipesWrapper {
+	height: 80vh;
+	-ms-overflow-y: auto;
+	    overflow-y: auto;
+}
+
+.RecipeBox {
+	background-color: #8470ff;	
+	color: #FFF;
+	-webkit-border-radius: 10px;
+	        border-radius: 10px;
+}
+
+.recipe_title {
+	text-decoration: none;
+	background-color: #6495ed;
+	color: #FFF;
+	padding: 0.5em;
+	margin: 0.5em auto 0;
+	display: block;
+	-webkit-transition: all 0.2s linear;
+	   -moz-transition: all 0.2s linear;
+	    -ms-transition: all 0.2s linear;
+	     -o-transition: all 0.2s linear;
+	        transition: all 0.2s linear;
+	
+}
+
+.recipe_title:hover,
+.recipe_title:active,
+.recipe_title:focus {
+	text-decoration: none;
+	color: #F1F1F1;
+}
+
+
+.recipe_details {
+	padding: 0.5em;
+}
+
+.recipe_details h3:first-child {
+	margin-top: 0;
+}
+
+form {
+	padding: 1em 0.5em;
+	margin: 1em auto;
+	background-color: #87cefa;
+	-webkit-border-radius: 5px;
+	        border-radius: 5px;
+	  -webkit-box-shadow: 3px 5px 10px 2px #ccc;
+          box-shadow: 3px 5px 10px 2px #ccc;
+}
+
+.add {
+	margin: 0.5em 0.5em 0 0;
+	position: relative;
+	display: block;
+}
+
+.form-control {
+	margin: 0.5em 0;
+}
