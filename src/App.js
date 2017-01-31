@@ -5,7 +5,7 @@ import './App.css';
 
 const data = [
   {
-    id: "recipe-1",
+    recipe_id: "recipe-1",
     recipe_name: "Peanut Butter and Jelly Sandwich",
     ingredients: [
       "Bread (usually one or two slices per sandwich)",
@@ -25,7 +25,18 @@ class RecipeForm extends Component {
       ingredients: 1,
       recipeData: {},
       fieldError: {},
+      recipe_id: '',
     };
+  }
+
+  componentDidMount(){
+    if(Object.keys(this.props.data).length){
+      this.setState({
+        recipeData: this.props.data,
+        recipe_id: this.props.data.recipe_id,
+        ingredients: this.props.data.ingredients.length,
+      });
+    }
   }
 
   addElement = (event) => {    
@@ -38,7 +49,15 @@ class RecipeForm extends Component {
     if(this.state.ingredients > 1){
       this.setState({
         ingredients: this.state.ingredients - 1,
-      })
+      });
+      let ingredientsID = this.state.ingredients;
+      let ingredients = this.state.recipeData.ingredients;
+      if(typeof ingredients !== 'undefined'){
+        ingredients = [...ingredients.slice(0, ingredientsID-1)];
+        this.setState({
+          recipeData: Object.assign(this.state.recipeData, {ingredients}),
+        });
+      }
     }
   }
 
@@ -72,8 +91,13 @@ class RecipeForm extends Component {
     let totalData = Object.assign({}, this.state.recipeData);
     const fieldError = this.validate(totalData);
     this.setState({fieldError: fieldError});
-    if(Object.keys(fieldError).length) return;
-    this.props.formSubmit(totalData);
+    if(Object.keys(fieldError).length > 1) return;
+    let ingredientErrors = fieldError.ingredients.filter((el, index) => {
+      if(el) return el;
+    });
+    if(ingredientErrors.length) return;
+    let totalDataWithID = Object.assign({}, totalData, {recipe_id: this.state.recipe_id});
+    this.props.formSubmit(totalDataWithID);
     this.setState({recipeData: {}});
   }
 
@@ -100,6 +124,7 @@ class RecipeForm extends Component {
   }
 
   render(){
+    const recipeData = this.state.recipeData;
     let ingredients = [];
     for (let indexNumber = 0; indexNumber < this.state.ingredients; indexNumber++) {
       ingredients.push(
@@ -110,7 +135,8 @@ class RecipeForm extends Component {
           key={"ingredient_" + (indexNumber+1)} 
           ref={"ingredient_" + (indexNumber+1)} 
           placeholder="Ingredient Name" 
-          onChange={this.onChange} />
+          onChange={this.onChange}
+          value={(typeof recipeData.ingredients !== "undefined") ? recipeData.ingredients[indexNumber] : ""} />
       )
     }
 
@@ -122,7 +148,8 @@ class RecipeForm extends Component {
             className={"form-control " + (this.state.fieldError.recipe_name ? "has-error" : "")}
             name="recipeName" 
             placeholder="Recipe Name"
-            onChange={this.onChange} />
+            onChange={this.onChange}
+            value={(typeof recipeData.recipe_name !== "undefined") ? recipeData.recipe_name : ""} />
           <hr/>
           {ingredients}
           <a 
@@ -144,7 +171,8 @@ class RecipeForm extends Component {
           className={"form-control " + (this.state.fieldError.instructions ? "has-error" : "")}
           name="instructions"
           placeholder="Instructions"
-          onChange={this.onChange} />
+          onChange={this.onChange}
+          value={(typeof recipeData.instructions !== "undefined") ? recipeData.instructions : ""} />
           <hr/>
           <button type="submit" className="btn btn-success">Submit</button>
         </form>
@@ -160,16 +188,16 @@ const RecipesList = (props) => {
         props.data.map((el, index) => {
           return(
             <div 
-              key={"recipe" + el.id} 
+              key={"recipe" + el.recipe_id} 
               className="RecipeBox"
               >
               <a href="#" 
-                id={el.id}
+                id={el.recipe_id}
                 className="recipe_title"
                 onClick={props.recipeStatus}>
                 {el.recipe_name}
               </a>
-              <div className={"recipe_details " + (props.activeElementId === el.id ? "collapse in" : "collapse")}>
+              <div className={"recipe_details " + (props.activeElementId === el.recipe_id ? "collapse in" : "collapse")}>
                 <h3>Ingredients</h3>
                 <ol>
                   {
@@ -184,6 +212,23 @@ const RecipesList = (props) => {
                 </ol>
                 <h3>Instructions</h3>
                 <p>{el.instructions}</p>
+                <br/>
+                <button 
+                  className="btn btn-success"
+                  onClick={() => {
+                    props.editRecipe(el.recipe_id)
+                  }}
+                >
+                  Edit recipe
+                </button>
+                <button 
+                  className="btn btn-danger"
+                  onClick={() => {
+                    props.deleteRecipe(el.recipe_id)
+                  }}
+                >
+                  Delete recipe
+                </button>
               </div>
             </div>
           );
@@ -200,12 +245,18 @@ class App extends Component {
     this.state = {
       new_recipe: false,
       data: data,
+      editedData: {},
       activeElementId: '',
       activeButton: 'add',
     };
   }
 
   componentDidMount(){
+    //localStorage.removeItem('recipe-data');
+    this.getLocalData();
+  }
+
+  getLocalData = () =>{
     let dataLocal = JSON.parse(localStorage.getItem('recipe-data')) || [];
     this.setState({
       data: Object.assign([], data, dataLocal),
@@ -213,13 +264,32 @@ class App extends Component {
   }
 
   formSubmit = (data) => {
-    let newId = this.state.data.length + 1;
-    let dataWithId = Object.assign({}, data, {id: "recipe-" + newId});
-    this.setState({
-      data: this.state.data.concat(dataWithId),
-      new_recipe: false,
-    });
-    localStorage.setItem('recipe-data', JSON.stringify(this.state.data.concat(dataWithId)));
+    if(data.recipe_id){
+      let editedItemIndex = this.state.data.findIndex(
+        (d) => d.recipe_id === data.recipe_id
+      );
+        let newData = [
+        ...this.state.data.slice(0, editedItemIndex),
+        data,
+        ...this.state.data.slice(editedItemIndex+1, this.state.data.length)
+      ];
+      this.setState({
+        data: newData,
+        new_recipe: false,
+        activeButton: 'add',
+      });
+      localStorage.setItem('recipe-data', JSON.stringify(newData));
+    }
+    else {
+      let newId = this.state.data.length + 1;
+      let dataWithId = Object.assign({}, data, {recipe_id: "recipe-" + newId});
+      this.setState({
+        data: this.state.data.concat(dataWithId),
+        new_recipe: false,
+        activeButton: 'add',
+      });
+      localStorage.setItem('recipe-data', JSON.stringify(this.state.data.concat(dataWithId)));
+    }
   }
 
   recipeStatus = (event) => {
@@ -232,6 +302,7 @@ class App extends Component {
     this.setState({
       new_recipe: true,
       activeButton: 'cancel',
+      editedData: {},
     })
   }
 
@@ -239,7 +310,34 @@ class App extends Component {
     this.setState({
       new_recipe: false,
       activeButton: 'add',
+      editedData: {},
+    });
+    this.getLocalData();
+  }
+
+  editRecipe = (id) => {
+    let editedData = this.state.data.filter((el, index) => {
+      if(el.recipe_id === id) return el;
+    });
+    this.setState({
+      new_recipe: true,
+      activeButton: 'cancel',
+      editedData: editedData[0],
     })
+  }
+
+  deleteRecipe = (id) => {
+    let deletedItemIndex = this.state.data.findIndex(
+      (d) => d.recipe_id === id
+    );
+    let newData = [
+      ...this.state.data.slice(0, deletedItemIndex),
+      ...this.state.data.slice(deletedItemIndex+1, this.state.data.length)
+    ];
+    this.setState({
+      data: newData,
+    });
+    localStorage.setItem('recipe-data', JSON.stringify(newData));
   }
 
   render() {
@@ -262,13 +360,16 @@ class App extends Component {
           this.state.new_recipe
           ? (
             <RecipeForm 
-              formSubmit={this.formSubmit}/>
+              formSubmit={this.formSubmit}
+              data={this.state.editedData}/>
           )
           : (
             <RecipesList 
               data={this.state.data}
               recipeStatus={this.recipeStatus}
-              activeElementId={this.state.activeElementId}/>
+              activeElementId={this.state.activeElementId}
+              editRecipe={this.editRecipe}
+              deleteRecipe={this.deleteRecipe} />
           )
         }
       </div>

@@ -7,6 +7,9 @@
           border-radius: 5px;
 }
 
+p {
+    white-space: pre-line;
+}
 
 .RecipesWrapper {
 	height: 80vh;
